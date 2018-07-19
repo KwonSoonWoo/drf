@@ -1,8 +1,8 @@
 from django.urls import path
 
-from . import views
+from ..views import django_view as views
 
-app_name = 'snippets'
+
 urlpatterns = [
     path('snippets/',
          views.snippet_list,
