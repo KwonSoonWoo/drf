@@ -23,7 +23,7 @@ class JSONResponse(HttpResponse):
 @csrf_exempt
 def snippet_list(request):
     if request.method == 'GET':
-        snippets = Snippet.objects.all()
+        snippets = Snippet.objects.order_by('-created')
         # many=True -> 여러개를 한번에 시리얼라이징 하겠다
         serializer = SnippetSerializer(snippets, many=True)
         # serializer.data가 파이썬 데이터가 str형식으로 받는거라 json형식으로 변환
