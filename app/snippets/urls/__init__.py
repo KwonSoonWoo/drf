@@ -9,7 +9,7 @@ from django.urls import path, include
 # /snippets/api_view/snippets/
 # /snippets/api_view/snippets/<pk>/
 
-from . import django_view, api_view, mixins
+from . import django_view, api_view, mixins, generic_cbv
 
 app_name = 'snippets'
 urlpatterns = [
@@ -17,4 +17,5 @@ urlpatterns = [
     path('django_view/', include(django_view)),
     path('api_view/', include(api_view)),
     path('mixins/', include(mixins)),
+    path('generic_cbv/', include(generic_cbv)),
 ]
