@@ -5,7 +5,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 
 from ..models import Snippet
-from ..serializers import SnippetSerializer
+from ..serializers import SnippetListSerializer
 
 __all__ = (
     'snippet_list',
@@ -25,7 +25,7 @@ def snippet_list(request):
     if request.method == 'GET':
         snippets = Snippet.objects.order_by('-created')
         # many=True -> 여러개를 한번에 시리얼라이징 하겠다
-        serializer = SnippetSerializer(snippets, many=True)
+        serializer = SnippetListSerializer(snippets, many=True)
         # serializer.data가 파이썬 데이터가 str형식으로 받는거라 json형식으로 변환
         json_data = JSONRenderer().render(serializer.data)
         # content_type -> postman에서 데이터를 읽을때 어떤 형식으로 읽을지 알려주는것
@@ -34,7 +34,7 @@ def snippet_list(request):
 
     elif request.method == 'POST':
         data = JSONParser().parse(request)
-        serializer = SnippetSerializer(data=data)
+        serializer = SnippetListSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return JSONResponse(serializer.data, status=201)
@@ -49,12 +49,12 @@ def snippet_detail(request, pk):
         return HttpResponse(status=404)
 
     if request.method == 'GET':
-        serializer = SnippetSerializer(snippet)
+        serializer = SnippetListSerializer(snippet)
         return JSONResponse(serializer.data)
 
     elif request.method == 'PUT':
         data = JSONParser().parse(request)
-        serializer = SnippetSerializer(snippet, data=data)
+        serializer = SnippetListSerializer(snippet, data=data)
         if serializer.is_valid():
             serializer.save()
             return JSONResponse(serializer.data)
@@ -62,7 +62,7 @@ def snippet_detail(request, pk):
 
     elif request.method == 'PATCH':
         data = JSONParser().parse(request)
-        serializer = SnippetSerializer(snippet, data=data, partial=True)
+        serializer = SnippetListSerializer(snippet, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JSONResponse(serializer.data)

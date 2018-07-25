@@ -2,13 +2,18 @@ import json
 import random
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 
 from .models import Snippet
 
 User = get_user_model()
+
+DUMMY_USER_USERNAME = 'dummy_username'
+
+
+def get_dummy_user():
+    return User.objects.create_user(username=DUMMY_USER_USERNAME)
 
 
 class SnippetListTest(APITestCase):
@@ -27,15 +32,15 @@ class SnippetListTest(APITestCase):
 
     def test_snippet_list_count(self):
         """
-        Snippet List를 요청시 DB에 있는 자료수와 같은 갯수로 리턴되는지 테스트
+        Snippet List를 요청시 DB에 있는 자료수와 같은 갯수가 리턴되는지 확인
             response (self.client.get요청 한 결과)에 온 데이터의 길이와
-            Django ORM을 이용한 QuerySet의 갯수가 같은지 확인
-
+            Django ORM을 이용한 QuerySet의 갯수가
+                같은지 확인
             response.content에 ByteString타입의 JSON String이 들어있음
             테스트시 임의로 몇 개의 Snippet을 만들고 진행 (테스트DB는 초기화된 상태로 시작)
         :return:
         """
-        user = User.objects.create_user(username='admin')
+        user = get_dummy_user()
         for i in range(random.randint(10, 100)):
             Snippet.objects.create(
                 code=f'a = {i}',
@@ -45,7 +50,7 @@ class SnippetListTest(APITestCase):
         data = json.loads(response.content)
 
         # response로 받은 JSON데이터의 길이와
-        # Snippet테이블의 자료수(COUNT)가 같은
+        # Snippet테이블의 자료수(COUNT)가 같은지
         self.assertEqual(len(data), Snippet.objects.count())
 
     def test_snippet_list_order_by_created_descending(self):
@@ -53,7 +58,7 @@ class SnippetListTest(APITestCase):
         Snippet List의 결과가 생성일자 내림차순인지 확인
         :return:
         """
-        user = User.objects.create_user(username='admin')
+        user = get_dummy_user()
         for i in range(random.randint(5, 10)):
             Snippet.objects.create(
                 code=f'a = {i}',
@@ -67,7 +72,6 @@ class SnippetListTest(APITestCase):
         # data_pk_list = []
         # for item in data:
         #     data_pk_list.append(item['pk'])
-        #
         #
         # # Snippet.objects.order_by('-created') QuerySet을 순회하며 각 Snippet인스턴스의 pk값만 꺼냄
         # snippets_pk_list = []
@@ -83,16 +87,16 @@ class SnippetListTest(APITestCase):
 
 
 CREATE_DATA = '''{
-	"code": "print('hello, world')"
+    "code": "print('hello, world')"
 }'''
 
 
-class SnippetCreatetest(APITestCase):
+class SnippetCreateTest(APITestCase):
     URL = '/snippets/generic_cbv/snippets/'
 
     def test_snippet_create_status_code(self):
         """
-        201이 들어오는지
+        201이 돌아오는지
         :return:
         """
         # 실제 JSON형식 데이터를 전송
@@ -101,19 +105,20 @@ class SnippetCreatetest(APITestCase):
         #     data=CREATE_DATA,
         #     content_type='application/json',
         # )
-
+        user = get_dummy_user()
+        self.client.force_authenticate(user=user)
         response = self.client.post(
-                self.URL,
-                data={
-                    'code': "print('hello, world')",
-                },
-                format='json',
-            )
+            self.URL,
+            data={
+                'code': "print('hello, world')",
+            },
+            format='json',
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_snippet_create_save_db(self):
         """
-        요청 후 실제 DB에 저장되었는지
+        요청 후 실제 DB에 저장되었는지 (모든 필드값이 정상적으로 저장되는지)
         :return:
         """
         # 생성할 Snippet에 사용될 정보
@@ -125,6 +130,8 @@ class SnippetCreatetest(APITestCase):
             'style': 'monokai',
         }
 
+        user = get_dummy_user()
+        self.client.force_authenticate(user=user)
         response = self.client.post(
             self.URL,
             data=snippet_data,
@@ -133,23 +140,18 @@ class SnippetCreatetest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         data = json.loads(response.content)
 
-        # snippet_detail내의 키들을 동적으로 순회하면서 아래코드를 실행
-        # (for문으로 바꾸기)
         # response로 받은 데이터와 Snippet생성시 사용한 데이터가 같은지 확인
         for key in snippet_data:
             self.assertEqual(data[key], snippet_data[key])
-        # self.assertEqual(data['title'],snippet_data['title'])
-        # self.assertEqual(data['code'],snippet_data['code'])
-        # self.assertEqual(data['linenos'],snippet_data['linenos'])
-        # self.assertEqual(data['language'],snippet_data['language'])
-        # self.assertEqual(data['style'],snippet_data['style'])
+
+        # Snippet생성과정에서 사용된 user가 owner인지 확인
+        self.assertEqual(data['owner'], user.username)
 
     def test_snippet_create_missing_code_raise_exception(self):
         """
         'code'데이터가 주어지지 않을 경우 적절한 Exception이 발생하는지
         :return:
         """
-
         # code만 주어지지 않은 데이터
         snippet_data = {
             'title': 'SnippetTitle',
@@ -157,6 +159,8 @@ class SnippetCreatetest(APITestCase):
             'language': 'c',
             'style': 'monokai',
         }
+        user = get_dummy_user()
+        self.client.force_authenticate(user=user)
         response = self.client.post(
             self.URL,
             data=snippet_data,
@@ -165,4 +169,3 @@ class SnippetCreatetest(APITestCase):
 
         # code가 주어지지 않으면 HTTP상태코드가 400이어야 함
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
