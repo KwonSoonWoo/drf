@@ -77,7 +77,6 @@ CREATE_DATA = '''{
 }'''
 
 
-
 class SnippetCreatetest(APITestCase):
     URL = '/snippets/generic_cbv/snippets/'
 

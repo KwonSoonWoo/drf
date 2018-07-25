@@ -21,6 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SnippetSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
     class Meta:
         model = Snippet
         fields = (
@@ -31,5 +32,9 @@ class SnippetSerializer(serializers.ModelSerializer):
             'language',
             'style',
             'style',
+            'owner',
+        )
+        # 읽기 전용.
+        read_only_fields = (
             'owner',
         )
