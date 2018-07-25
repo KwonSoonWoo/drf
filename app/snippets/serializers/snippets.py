@@ -13,7 +13,7 @@ __all__ = (
 
 
 class SnippetBaseSerializer(serializers.ModelSerializer):
-    owner = UserListSerializer()
+    owner = UserListSerializer(required=False)
 
     class Meta:
         model = Snippet

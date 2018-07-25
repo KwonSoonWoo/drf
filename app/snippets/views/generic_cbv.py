@@ -23,7 +23,15 @@ class SnippetList(generics.ListCreateAPIView):
     serializer_class = SnippetListSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-    def pre_save(self, serializer):
+    def get_serializer_class(self):
+        # GET, POST요청 (List, Create)시마다 다른 Serializer를 쓰도록
+        # get_serializer_class()를 재정의
+        if self.request.method == 'GET':
+            return SnippetListSerializer
+        elif self.request.method == 'POST':
+            return SnippetDetailSerializer
+
+    def perform_create(self, serializer):
         # SnippetSerializer로 전달받은 데이터에
         # 'owner'항목에 self.request.user데이터를 추가한 후
         # save() 호출, DB에 저장 및 인스턴스 반환환
