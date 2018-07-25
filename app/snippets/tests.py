@@ -1,11 +1,14 @@
 import json
 import random
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 
 from .models import Snippet
+
+User = get_user_model()
 
 
 class SnippetListTest(APITestCase):
@@ -26,15 +29,18 @@ class SnippetListTest(APITestCase):
         """
         Snippet List를 요청시 DB에 있는 자료수와 같은 갯수로 리턴되는지 테스트
             response (self.client.get요청 한 결과)에 온 데이터의 길이와
-            Django ORM을 이용한 QuerySet의 갯수가
-                같은지 확인
+            Django ORM을 이용한 QuerySet의 갯수가 같은지 확인
 
             response.content에 ByteString타입의 JSON String이 들어있음
             테스트시 임의로 몇 개의 Snippet을 만들고 진행 (테스트DB는 초기화된 상태로 시작)
         :return:
         """
+        user = User.objects.create_user(username='admin')
         for i in range(random.randint(10, 100)):
-            Snippet.objects.create(code=f'a = {i}')
+            Snippet.objects.create(
+                code=f'a = {i}',
+                owner=user,
+            )
         response = self.client.get(self.URL)
         data = json.loads(response.content)
 
@@ -47,8 +53,12 @@ class SnippetListTest(APITestCase):
         Snippet List의 결과가 생성일자 내림차순인지 확인
         :return:
         """
+        user = User.objects.create_user(username='admin')
         for i in range(random.randint(5, 10)):
-            Snippet.objects.create(code=f'a = {i}')
+            Snippet.objects.create(
+                code=f'a = {i}',
+                owner=user,
+            )
         response = self.client.get(self.URL)
         data = json.loads(response.content)
         # snippets = Snippet.objects.order_by('-created')
