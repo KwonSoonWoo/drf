@@ -50,9 +50,9 @@ class SnippetListTest(APITestCase):
         response = self.client.get(self.URL)
         data = json.loads(response.content)
 
-        # response로 받은 JSON데이터의 길이와
-        # Snippet테이블의 자료수(COUNT)가 같은지
-        self.assertEqual(len(data), Snippet.objects.count())
+        # response로 받은 데이터의 'count'항목 ( 전체 결과 수)과
+        # Snippet테이블의 자료수(Query COUNT)가 같은지
+        self.assertEqual(data['count'], Snippet.objects.count())
 
     def test_snippet_list_order_by_created_descending(self):
         """
@@ -65,23 +65,24 @@ class SnippetListTest(APITestCase):
                 code=f'a = {i}',
                 owner=user,
             )
-        response = self.client.get(self.URL)
-        data = json.loads(response.content)
-        # snippets = Snippet.objects.order_by('-created')
-        #
-        # # response에 전달된 JSON string을 파싱한 Python 객체를 순회하며 'pk'값만 꺼냄
-        # data_pk_list = []
-        # for item in data:
-        #     data_pk_list.append(item['pk'])
-        #
-        # # Snippet.objects.order_by('-created') QuerySet을 순회하며 각 Snippet인스턴스의 pk값만 꺼냄
-        # snippets_pk_list = []
-        # for snippet in snippets:
-        #     snippets_pk_list.append(snippet.pk)
+        # SnppetList API를 'next'값이 없을 떄 까지 page값을 증가시키며실행,
+        # 결과 results항목들의 pk들을 pk_list에 추가
+        pk_list = []
+        page = 1
+        while True:
+            response = self.client.get(self.URL, {'page': page})
+            data = json.loads(response.content)
+            pk_list += [item['pk'] for item in data['results']]
+            if data['next']:
+                # 'next'값이 존재하면 (다음 페이지가 있을경우) page값을 1증가, 다음 루프
+                page += 1
+            else:
+                # 'next'값이 존재하지 않으면 이번을 마지막으로 루프 종료
+                break
 
         self.assertEqual(
             # JSON으로 전달받은 데이터에서 pk만 꺼낸 리스트
-            [item['pk'] for item in data],
+            pk_list,
             # DB에서 created역순으로 pk값만 가져온 QuerySet으로 만든 리스트
             list(Snippet.objects.order_by('created').values_list('pk', flat=True))
         )

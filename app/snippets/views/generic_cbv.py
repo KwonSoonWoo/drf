@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 
 from snippets.models import Snippet
+from utils.paginations import SnippetListPagination
 from ..permissions import IsOwnerOrReadOnly
 from snippets.serializers import UserListSerializer, SnippetDetailSerializer, SnippetListSerializer
 from rest_framework import generics
@@ -22,6 +23,7 @@ class SnippetList(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetListSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    pagination_class = SnippetListPagination
 
     def get_serializer_class(self):
         # GET, POST요청 (List, Create)시마다 다른 Serializer를 쓰도록
