@@ -9,6 +9,8 @@ djangorestframework = "*"
 markdown = "*"
 django-filter = "*"
 pygments = "*"
+ipython = {version = "*", extras = ["notebook"]}
+django-extensions = "*"
 
 [dev-packages]
 ipython = "*"
